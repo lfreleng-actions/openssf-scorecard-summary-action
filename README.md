@@ -3,47 +3,45 @@
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 -->
 
-# 🛠️ Template Action
+# 📄 OpenSSF Scorecard Summary Output
 
-This is a template for the other actions in this Github organisation.
+Provides summary output with a URL/link to the Scorecard report.
 
-## actions-template
+Note: The upstream action has not implemented this feature.
 
-## Usage Example
+## openssf-scorecard-summary-action
 
-<!-- markdownlint-disable MD046 -->
+## Implementation Notes
+
+Summary output originates from a separate job in the calling workflow. This is
+because the OpenSSF upstream action performs security checks before
+it will upload results. The calling workflow audit can block the reporting
+of results. Be mindful during the implementation of surrounding
+action/workflow code.
+
+## Usage Example: Reusable Workflow
+
+<!-- markdownlint-disable MD013 -->
 
 ```yaml
-steps:
-  - name: "Action template"
-    id: action-template
-    uses: lfreleng-actions/actions-template@main
-    with:
-      input: "placeholder"
+jobs:
+    openssf-scorecard: [...]
+
+    # Summary output MUST be in a separate job
+    # (refer to the ossf/scorecard-action documentation)
+    summary-output:
+        name: 'Link'
+        needs: openssf-scorecard
+        runs-on: ubuntu-24.04
+        steps:
+            - name: 'Provide link to scorecard'
+              # The upstream action does not provide any useful summary output
+              # The action below adds a hyperlink to the OpenSSF Scorecard/report
+              uses: lfit/releng-reusable-workflows/.github/actions/openssf-scorecard-summary-action@main
 ```
 
-<!-- markdownlint-enable MD046 -->
-
-## Inputs
-
-<!-- markdownlint-disable MD013 -->
-
-| Name          | Required | Description  |
-| ------------- | -------- | ------------ |
-| input         | False    | Action input |
-
 <!-- markdownlint-enable MD013 -->
 
-## Outputs
+## Example Implementation: Reusable Workflow
 
-<!-- markdownlint-disable MD013 -->
-
-| Name          | Description   |
-| ------------- | ------------- |
-| output        | Action output |
-
-<!-- markdownlint-enable MD013 -->
-
-## Implementation Details
-
-## Notes
+See: <https://github.com/lfit/releng-reusable-workflows/blob/main/.github/workflows/reuse-openssf-scorecard.yaml>

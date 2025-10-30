@@ -2,36 +2,55 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
-# actions-template
-name: "🛠️ Actions Template"
-description: "Description of action"
-# Any relevant notes/observations can go here
+# openssf-scorecard-summary-action
+name: '📄 OpenSSF Scorecard Summary'
+description: 'Provides OpenSSF summary output containing report URL'
 
 inputs:
-  input:
-    description: "Description of input"
-    required: true
+  repository_owner:
+    description: 'Repository owner (optional, auto-detected if not provided)'
+    required: false
+    default: ''
+  repository_name:
+    description: 'Repository name (optional, auto-detected if not provided)'
+    required: false
+    default: ''
 
 outputs:
-  output:
-    description: "Description of output"
-    value: ${{ steps.code.outputs.output }}
+  scorecard_url:
+    description: 'URL to the OpenSSF Scorecard results'
+    value: ${{ steps.generate-url.outputs.url }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: "Friendly Name"
-      id: code
+    - name: 'Repository metadata'
+      id: repository-metadata
+      # yamllint disable-line rule:line-length
+      uses: lfit/releng-reusable-workflows/.github/actions/repository-metadata-action@1d327501514102db5018642036a974e79415ec5a # v0.2.8
+
+    - name: 'Generate Scorecard URL'
+      id: generate-url
       shell: bash
       run: |
-        # Friendly Name
-        input="${{ inputs.input }}"
-        if [ -z "$input" ]; then
-          echo "Error: mandatory input was not set/configured ❌"
-          exit 1
+        # Generate scorecard URL
+        if [ -n "${{ inputs.repository_owner }}" ] && \
+           [ -n "${{ inputs.repository_name }}" ]; then
+          owner="${{ inputs.repository_owner }}"
+          repo="${{ inputs.repository_name }}"
+        else
+          owner="${{ steps.repository-metadata.outputs.repository_owner }}"
+          repo="${{ steps.repository-metadata.outputs.repository_name }}"
         fi
 
-        echo "output=$input" >> "$GITHUB_ENV"
-        echo "output=$input" >> "$GITHUB_OUTPUT"
-        echo "Action received: $input ✅"
-        echo "Action received: $input ✅" >> "$GITHUB_STEP_SUMMARY"
+        url="https://scorecard.dev/viewer/?uri=github.com/${owner}/${repo}"
+        echo "url=${url}" >> "$GITHUB_OUTPUT"
+        echo "Generated scorecard URL: ${url}"
+
+    - name: 'Print summary/job Output'
+      shell: bash
+      # yamllint disable rule:line-length
+      run: |
+        # Print summary/job output
+        echo '## 🔐 OpenSSF Scorecard Results' >> "$GITHUB_STEP_SUMMARY"
+        echo "🔗 ${{ steps.generate-url.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"

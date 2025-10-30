@@ -3,15 +3,15 @@
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
 # Action test/validation workflow
-name: "Test GitHub Action 🧪"
+name: 'Test GitHub Action 🧪'
 
 # yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -21,55 +21,154 @@ permissions: {}
 
 jobs:
   ### Test the GitHub Action in this Repository ###
-  tests:
-    name: "Test local GitHub Action"
+  test-basic:
+    name: 'Test Basic Functionality'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 10 # Increase this timeout value as needed
+    timeout-minutes: 5
     steps:
       # Harden the runner used by this workflow
       # yamllint disable-line rule:line-length
       - uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        name: 'Harden runner'
         with:
           egress-policy: audit
 
-      - name: "Checkout repository"
+      - name: 'Checkout repository'
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      # Perform setup prior to running test(s)
-      - name: "Testing setup step"
-        shell: bash
-        run: |
-          # Testing setup step
-          echo "Testing setup step"
-          echo "Testing setup step/summary output" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: "Running local action: ${{ github.repository }}"
+      - name: 'Test Action with auto-detection'
+        id: test-auto
         uses: ./
-        with:
-          input: "test input 💬"
 
-      - name: "Validated local action: ${{ github.repository }}"
+      - name: 'Verify auto-detection output'
         shell: bash
         run: |
-          # Local action validation
-          echo "Validated local action: ${{ github.repository }}"
-          echo "Validation step summary output" >> "$GITHUB_STEP_SUMMARY"
+          # Verify the scorecard URL was generated
+          url='${{ steps.test-auto.outputs.scorecard_url }}'
+          echo "Generated URL: ${url}"
 
+          if [[ -z "${url}" ]]; then
+            echo 'Error: no URL generated' >&2
+            exit 1
+          fi
+
+          if [[ "${url}" != *'scorecard.dev/viewer'* ]]; then
+            echo 'Error: invalid URL format' >&2
+            exit 1
+          fi
+
+          echo '✅ Auto-detection test passed'
+
+  test-with-inputs:
+    name: 'Test with Custom Inputs'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
       # yamllint disable-line rule:line-length
-      - name: "Running local action: ${{ github.repository }} [Override Failure]"
-        uses: ./
-        id: failure
-        continue-on-error: true
+      - uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        name: 'Harden runner'
         with:
-          invalid_input: "Some garbage"
+          egress-policy: audit
 
-      # Failure testing is also important
-      - name: "Error if step above did NOT fail"
-        if: steps.failure.outcome == 'success'
+      - name: 'Checkout repository'
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: 'Test Action with custom inputs'
+        id: test-custom
+        uses: ./
+        with:
+          repository_owner: 'testowner'
+          repository_name: 'testrepo'
+
+      - name: 'Verify previous step results'
         shell: bash
         run: |
-          # Error if step above did NOT fail
-          echo "Error: previous test step did NOT fail ❌"
-          exit 1
+          # Verify the scorecard URL contains custom values
+
+          # Note: Contents of GITHUB_STEP_SUMMARY file is managed by GitHub
+          # and cannot be reliably read or checked/verified across steps.
+
+          url='${{ steps.test-custom.outputs.scorecard_url }}'
+          echo "Generated URL: ${url}"
+          expected_url='https://scorecard.dev/viewer/?uri=github.com/testowner/testrepo'
+          if [[ "${url}" != "${expected_url}" ]]; then
+            echo "Error: expected '${expected_url}', got '${url}'" >&2
+            exit 1
+          fi
+          echo '✅ Custom inputs test passed'
+
+
+  # The step summary functionality is verified by visual inspection in the
+  # GitHub Actions UI where summaries appear correctly for all test jobs.
+  # See: test-basic, test-with-inputs, and test-edge-cases jobs which all
+  # successfully generate step summaries visible in the workflow run UI.
+
+  test-edge-cases:
+    name: 'Test Edge Cases'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+        name: 'Harden runner'
+        with:
+          egress-policy: audit
+
+      - name: 'Checkout repository'
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: 'Test with empty inputs'
+        id: test-empty
+        uses: ./
+        with:
+          repository_owner: ''
+          repository_name: ''
+
+      - name: 'Verify empty inputs fallback to auto-detection'
+        shell: bash
+        run: |
+          # Verify that empty inputs fall back to auto-detection
+          url='${{ steps.test-empty.outputs.scorecard_url }}'
+          echo "Generated URL: ${url}"
+
+          if [[ -z "${url}" ]]; then
+            echo 'Error: no URL generated with empty inputs' >&2
+            exit 1
+          fi
+
+          # Should contain the actual repository name from auto-detection
+          if [[ "${url}" != *'scorecard.dev/viewer'* ]]; then
+            echo 'Error: invalid URL format with empty inputs' >&2
+            exit 1
+          fi
+
+          echo '✅ Empty inputs test passed'
+
+      - name: 'Test with only owner specified'
+        id: test-partial
+        uses: ./
+        with:
+          repository_owner: 'partialtest'
+          repository_name: ''
+
+      - name: 'Verify partial inputs'
+        shell: bash
+        run: |
+          # WVerify partial inputs
+          url='${{ steps.test-partial.outputs.scorecard_url }}'
+          echo "Generated URL: ${url}"
+
+          if [[ -z "${url}" ]]; then
+            echo 'Error: no URL generated with partial inputs' >&2
+            exit 1
+          fi
+
+          echo '✅ Partial inputs test passed'
