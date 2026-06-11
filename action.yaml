@@ -39,15 +39,21 @@ runs:
     - name: 'Generate Scorecard URL'
       id: generate-url
       shell: bash
+      env:
+        INPUT_REPOSITORY_OWNER: ${{ inputs.repository_owner }}
+        INPUT_REPOSITORY_NAME: ${{ inputs.repository_name }}
+        # yamllint disable-line rule:line-length
+        METADATA_OWNER: ${{ steps.repository-metadata.outputs.repository_owner }}
+        METADATA_NAME: ${{ steps.repository-metadata.outputs.repository_name }}
       run: |
         # Generate scorecard URL
-        if [ -n "${{ inputs.repository_owner }}" ] && \
-           [ -n "${{ inputs.repository_name }}" ]; then
-          owner="${{ inputs.repository_owner }}"
-          repo="${{ inputs.repository_name }}"
+        if [ -n "$INPUT_REPOSITORY_OWNER" ] && \
+           [ -n "$INPUT_REPOSITORY_NAME" ]; then
+          owner="$INPUT_REPOSITORY_OWNER"
+          repo="$INPUT_REPOSITORY_NAME"
         else
-          owner="${{ steps.repository-metadata.outputs.repository_owner }}"
-          repo="${{ steps.repository-metadata.outputs.repository_name }}"
+          owner="$METADATA_OWNER"
+          repo="$METADATA_NAME"
         fi
 
         url="https://scorecard.dev/viewer/?uri=github.com/${owner}/${repo}"
@@ -56,8 +62,10 @@ runs:
 
     - name: 'Print summary/job Output'
       shell: bash
+      env:
+        SCORECARD_URL: ${{ steps.generate-url.outputs.url }}
       # yamllint disable rule:line-length
       run: |
         # Print summary/job output
         echo '## 🔐 OpenSSF Scorecard Results' >> "$GITHUB_STEP_SUMMARY"
-        echo "🔗 ${{ steps.generate-url.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+        echo "🔗 $SCORECARD_URL" >> "$GITHUB_STEP_SUMMARY"
