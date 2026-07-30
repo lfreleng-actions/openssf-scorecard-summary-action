@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           # Verify the scorecard URL was generated
-          url='${{ steps.test-auto.outputs.scorecard_url }}'
+          url="${STEPS_TEST_AUTO_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
 
           if [[ -z "${url}" ]]; then
@@ -67,6 +67,9 @@ jobs:
           fi
 
           echo '✅ Auto-detection test passed'
+        env:
+          # yamllint disable-line rule:line-length
+          STEPS_TEST_AUTO_OUTPUTS_SCORECARD_URL: ${{ steps.test-auto.outputs.scorecard_url }}
 
   test-with-inputs:
     name: 'Test with Custom Inputs'
@@ -102,7 +105,7 @@ jobs:
           # Note: Contents of GITHUB_STEP_SUMMARY file is managed by GitHub
           # and cannot be reliably read or checked/verified across steps.
 
-          url='${{ steps.test-custom.outputs.scorecard_url }}'
+          url="${STEPS_TEST_CUSTOM_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
           expected_url='https://scorecard.dev/viewer/?uri=github.com/testowner/testrepo'
           if [[ "${url}" != "${expected_url}" ]]; then
@@ -110,6 +113,9 @@ jobs:
             exit 1
           fi
           echo '✅ Custom inputs test passed'
+        env:
+          # yamllint disable-line rule:line-length
+          STEPS_TEST_CUSTOM_OUTPUTS_SCORECARD_URL: ${{ steps.test-custom.outputs.scorecard_url }}
 
 
   # The step summary functionality is verified by visual inspection in the
@@ -147,7 +153,7 @@ jobs:
         shell: bash
         run: |
           # Verify that empty inputs fall back to auto-detection
-          url='${{ steps.test-empty.outputs.scorecard_url }}'
+          url="${STEPS_TEST_EMPTY_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
 
           if [[ -z "${url}" ]]; then
@@ -162,6 +168,9 @@ jobs:
           fi
 
           echo '✅ Empty inputs test passed'
+        env:
+          # yamllint disable-line rule:line-length
+          STEPS_TEST_EMPTY_OUTPUTS_SCORECARD_URL: ${{ steps.test-empty.outputs.scorecard_url }}
 
       - name: 'Test with only owner specified'
         id: test-partial
@@ -173,8 +182,8 @@ jobs:
       - name: 'Verify partial inputs'
         shell: bash
         run: |
-          # WVerify partial inputs
-          url='${{ steps.test-partial.outputs.scorecard_url }}'
+          # Verify partial inputs
+          url="${STEPS_TEST_PARTIAL_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
 
           if [[ -z "${url}" ]]; then
@@ -183,3 +192,6 @@ jobs:
           fi
 
           echo '✅ Partial inputs test passed'
+        env:
+          # yamllint disable-line rule:line-length
+          STEPS_TEST_PARTIAL_OUTPUTS_SCORECARD_URL: ${{ steps.test-partial.outputs.scorecard_url }}
