@@ -40,14 +40,9 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: 'Checkout repository'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - name: 'Test Action with auto-detection'
         id: test-auto
-        uses: ./
+        uses: $/
 
       - name: 'Verify auto-detection output'
         shell: bash
@@ -85,14 +80,9 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: 'Checkout repository'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - name: 'Test Action with custom inputs'
         id: test-custom
-        uses: ./
+        uses: $/
         with:
           repository_owner: 'testowner'
           repository_name: 'testrepo'
@@ -137,14 +127,9 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: 'Checkout repository'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - name: 'Test with empty inputs'
         id: test-empty
-        uses: ./
+        uses: $/
         with:
           repository_owner: ''
           repository_name: ''
@@ -174,7 +159,7 @@ jobs:
 
       - name: 'Test with only owner specified'
         id: test-partial
-        uses: ./
+        uses: $/
         with:
           repository_owner: 'partialtest'
           repository_name: ''
