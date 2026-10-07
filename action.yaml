@@ -46,14 +46,14 @@ runs:
         METADATA_OWNER: ${{ steps.repository-metadata.outputs.repository_owner }}
         METADATA_NAME: ${{ steps.repository-metadata.outputs.repository_name }}
       run: |
-        # Generate scorecard URL
-        if [ -n "$INPUT_REPOSITORY_OWNER" ] && \
-           [ -n "$INPUT_REPOSITORY_NAME" ]; then
-          owner="$INPUT_REPOSITORY_OWNER"
-          repo="$INPUT_REPOSITORY_NAME"
-        else
-          owner="$METADATA_OWNER"
-          repo="$METADATA_NAME"
+        # Generate scorecard URL; each input falls back independently
+        owner="${INPUT_REPOSITORY_OWNER:-$METADATA_OWNER}"
+        repo="${INPUT_REPOSITORY_NAME:-$METADATA_NAME}"
+
+        if [ -z "$owner" ] || [ -z "$repo" ]; then
+          echo "Error: could not determine repository owner/name" \
+            "(owner='${owner}', name='${repo}')" >&2
+          exit 1
         fi
 
         url="https://scorecard.dev/viewer/?uri=github.com/${owner}/${repo}"

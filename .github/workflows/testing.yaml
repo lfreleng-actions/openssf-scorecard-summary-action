@@ -153,19 +153,43 @@ jobs:
           repository_owner: 'partialtest'
           repository_name: ''
 
-      - name: 'Verify partial inputs'
+      - name: 'Verify owner-only input'
         shell: bash
         run: |
-          # Verify partial inputs
+          # Verify the owner is used and the name is auto-detected
           url="${STEPS_TEST_PARTIAL_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
-
-          if [[ -z "${url}" ]]; then
-            echo 'Error: no URL generated with partial inputs' >&2
+          base_url='https://scorecard.dev/viewer/?uri=github.com'
+          expected_url="${base_url}/partialtest/${GITHUB_REPOSITORY#*/}"
+          if [[ "${url}" != "${expected_url}" ]]; then
+            echo "Error: expected '${expected_url}', got '${url}'" >&2
             exit 1
           fi
-
-          echo '✅ Partial inputs test passed'
+          echo '✅ Owner-only input test passed'
         env:
           # yamllint disable-line rule:line-length
           STEPS_TEST_PARTIAL_OUTPUTS_SCORECARD_URL: ${{ steps.test-partial.outputs.scorecard_url }}
+
+      - name: 'Test with only name specified'
+        id: test-partial-name
+        uses: $/
+        with:
+          repository_owner: ''
+          repository_name: 'partialrepo'
+
+      - name: 'Verify name-only input'
+        shell: bash
+        run: |
+          # Verify the name is used and the owner is auto-detected
+          url="${STEPS_TEST_PARTIAL_NAME_OUTPUTS_SCORECARD_URL}"
+          echo "Generated URL: ${url}"
+          base_url='https://scorecard.dev/viewer/?uri=github.com'
+          expected_url="${base_url}/${GITHUB_REPOSITORY%%/*}/partialrepo"
+          if [[ "${url}" != "${expected_url}" ]]; then
+            echo "Error: expected '${expected_url}', got '${url}'" >&2
+            exit 1
+          fi
+          echo '✅ Name-only input test passed'
+        env:
+          # yamllint disable-line rule:line-length
+          STEPS_TEST_PARTIAL_NAME_OUTPUTS_SCORECARD_URL: ${{ steps.test-partial-name.outputs.scorecard_url }}
