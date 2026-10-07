@@ -47,20 +47,15 @@ jobs:
       - name: 'Verify auto-detection output'
         shell: bash
         run: |
-          # Verify the scorecard URL was generated
+          # Verify the scorecard URL points at this repository
           url="${STEPS_TEST_AUTO_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
-
-          if [[ -z "${url}" ]]; then
-            echo 'Error: no URL generated' >&2
+          base_url='https://scorecard.dev/viewer/?uri=github.com'
+          expected_url="${base_url}/${GITHUB_REPOSITORY}"
+          if [[ "${url}" != "${expected_url}" ]]; then
+            echo "Error: expected '${expected_url}', got '${url}'" >&2
             exit 1
           fi
-
-          if [[ "${url}" != *'scorecard.dev/viewer'* ]]; then
-            echo 'Error: invalid URL format' >&2
-            exit 1
-          fi
-
           echo '✅ Auto-detection test passed'
         env:
           # yamllint disable-line rule:line-length
@@ -140,18 +135,12 @@ jobs:
           # Verify that empty inputs fall back to auto-detection
           url="${STEPS_TEST_EMPTY_OUTPUTS_SCORECARD_URL}"
           echo "Generated URL: ${url}"
-
-          if [[ -z "${url}" ]]; then
-            echo 'Error: no URL generated with empty inputs' >&2
+          base_url='https://scorecard.dev/viewer/?uri=github.com'
+          expected_url="${base_url}/${GITHUB_REPOSITORY}"
+          if [[ "${url}" != "${expected_url}" ]]; then
+            echo "Error: expected '${expected_url}', got '${url}'" >&2
             exit 1
           fi
-
-          # Should contain the actual repository name from auto-detection
-          if [[ "${url}" != *'scorecard.dev/viewer'* ]]; then
-            echo 'Error: invalid URL format with empty inputs' >&2
-            exit 1
-          fi
-
           echo '✅ Empty inputs test passed'
         env:
           # yamllint disable-line rule:line-length
